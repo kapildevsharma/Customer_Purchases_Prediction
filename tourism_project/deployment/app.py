@@ -38,24 +38,24 @@ designation = st.selectbox("Customer's designation in their current organization
 
 # Assemble input into DataFrame
 input_data = pd.DataFrame([{
-  'age': age,
-  'city_tier': city_tier,
-  'duration_of_pitch': duration_of_pitch,
-  'number_of_person_visiting': number_of_person_visiting,
-  'number_of_followups': number_of_followups,
-  'preferred_property_star': preferred_property_star,
-	'number_of_trips': number_of_trips,
-  'passport': passport,
-  'pitch_satisfaction_score': pitch_satisfaction_score,
-  'own_car': own_car,
-  'number_of_children_visiting': number_of_children_visiting,
-	'monthly_income': monthly_income,
-	'type_of_contact': type_of_contact,
-	'occupation': occupation,
-	'gender': gender,
-	'product_pitched': product_pitched,
-	'marital_status': marital_status,
-	'designation': designation
+    'OwnCar': own_car,
+    'NumberOfPersonVisiting': number_of_person_visiting,
+    'Age': age,
+    'DurationOfPitch': duration_of_pitch,
+    'Passport': passport,
+    'CityTier': city_tier,
+    'Gender': gender,
+    'Occupation': occupation,
+    'NumberOfTrips': number_of_trips,
+    'NumberOfFollowups': number_of_followups,
+    'NumberOfChildrenVisiting': number_of_children_visiting,
+    'Designation': designation,
+    'TypeofContact': type_of_contact,
+    'MonthlyIncome': monthly_income,
+    'ProductPitched': product_pitched,
+    'PreferredPropertyStar': preferred_property_star,
+    'PitchSatisfactionScore': pitch_satisfaction_score,
+    'MaritalStatus': marital_status
 }])
 
 # Predict button
