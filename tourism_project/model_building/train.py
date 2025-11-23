@@ -6,7 +6,7 @@ from sklearn.pipeline import make_pipeline
 # for model training, tuning, and evaluation
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, recall_score, mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import accuracy_score, classification_report, 
 # for model serialization
 import joblib
 # for creating a folder
@@ -16,11 +16,14 @@ from huggingface_hub import login, HfApi, create_repo
 from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 import mlflow
 
+# MLflow Setup
 mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("mlops-training-experiment")
 
+# HuggingFace Authentication
 api = HfApi()
 
+# Load Data from Hugging Face Dataset Repository
 Xtrain_path = "hf://datasets/kapilmika/customer-purchases-prediction/Xtrain.csv"
 Xtest_path = "hf://datasets/kapilmika/customer-purchases-prediction/Xtest.csv"
 ytrain_path = "hf://datasets/kapilmika/customer-purchases-prediction/ytrain.csv"
@@ -59,7 +62,7 @@ categorical_features = [
     'Designation'     # Customer's designation in their current organization.
 ]
 
-# Set the clas weight to handle class imbalance
+# Set the clas weight to handle class imbalance  
 class_weight = ytrain.value_counts()[0] / ytrain.value_counts()[1]
 class_weight
 
@@ -69,7 +72,7 @@ preprocessor = make_column_transformer(
     (OneHotEncoder(handle_unknown='ignore'), categorical_features)
 )
 
-# Define base XGBoost model
+# Define base XGBoost model  
 xgb_model = xgb.XGBClassifier(scale_pos_weight=class_weight, random_state=42)
 
 # Define hyperparameter grid
@@ -85,33 +88,33 @@ param_grid = {
 # Model pipeline
 model_pipeline = make_pipeline(preprocessor, xgb_model)
 
+# Training + Experiment Tracking
 # Start MLflow run
 with mlflow.start_run():
     # Hyperparameter tuning
     grid_search = GridSearchCV(model_pipeline, param_grid, cv=3, n_jobs=-1)
     grid_search.fit(Xtrain, ytrain)
 
-    # Log all CV results
+    # Log all CV results due to exceeds ngrok free tier limit in nested loop
     results = grid_search.cv_results_
     # Save full CV results as a CSV (recommended)
     df = pd.DataFrame(results)
     df.to_csv("cv_results.csv", index=False)
     mlflow.log_artifact("cv_results.csv")
 
-    # Log best parameters separately in main run
+    # Log best parameters & CV score
     mlflow.log_params(grid_search.best_params_)
-
-    # Log best CV score
     mlflow.log_metric("best_cv_score", grid_search.best_score_)
 
     # Store and evaluate the best model
     best_model = grid_search.best_estimator_
-
     classification_threshold = 0.45
 
+    # Train Predictions
     y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
     y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
 
+    # Test Predictions
     y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
     y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
 
@@ -158,3 +161,5 @@ with mlflow.start_run():
         repo_id=repo_id,
         repo_type=repo_type,
     )
+
+    print("Model uploaded successfully!")
