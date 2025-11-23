@@ -1,12 +1,14 @@
 # for data manipulation
 import pandas as pd
+import sklearn
+# for data preprocessing and pipeline creation
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
 # for model training, tuning, and evaluation
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report,
+from sklearn.metrics import accuracy_score, classification_report
 # for model serialization
 import joblib
 # for creating a folder
@@ -113,7 +115,7 @@ with mlflow.start_run():
 
     # Store and evaluate the best model
     best_model = grid_search.best_estimator_
-    
+
     classification_threshold = 0.45
 
     # Train Predictions
