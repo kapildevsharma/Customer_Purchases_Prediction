@@ -6,7 +6,7 @@ from sklearn.pipeline import make_pipeline
 # for model training, tuning, and evaluation
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, 
+from sklearn.metrics import accuracy_score, classification_report,
 # for model serialization
 import joblib
 # for creating a folder
@@ -62,7 +62,7 @@ categorical_features = [
     'Designation'     # Customer's designation in their current organization.
 ]
 
-# Set the clas weight to handle class imbalance  
+# Set the clas weight to handle class imbalance
 class_weight = ytrain.value_counts()[0] / ytrain.value_counts()[1]
 class_weight
 
@@ -72,16 +72,16 @@ preprocessor = make_column_transformer(
     (OneHotEncoder(handle_unknown='ignore'), categorical_features)
 )
 
-# Define base XGBoost model  
+# Define base XGBoost model
 xgb_model = xgb.XGBClassifier(scale_pos_weight=class_weight, random_state=42)
 
 # Define hyperparameter grid
 param_grid = {
     'xgbclassifier__n_estimators': [75, 100],
-    'xgbclassifier__max_depth': [3, 4],
-    'xgbclassifier__colsample_bytree': [0.4, 0.5],
-    'xgbclassifier__colsample_bylevel': [0.5, 0.6],
-    'xgbclassifier__learning_rate': [0.05, 0.1],
+    'xgbclassifier__max_depth': [2],
+    'xgbclassifier__colsample_bytree': [0.5],
+    'xgbclassifier__colsample_bylevel': [0.6],
+    'xgbclassifier__learning_rate': [0.1],
     'xgbclassifier__reg_lambda': [0.5, 0.6],
 }
 
@@ -95,19 +95,25 @@ with mlflow.start_run():
     grid_search = GridSearchCV(model_pipeline, param_grid, cv=3, n_jobs=-1)
     grid_search.fit(Xtrain, ytrain)
 
-    # Log all CV results due to exceeds ngrok free tier limit in nested loop
+    # Log all parameter combinations and their mean test scores
     results = grid_search.cv_results_
-    # Save full CV results as a CSV (recommended)
-    df = pd.DataFrame(results)
-    df.to_csv("cv_results.csv", index=False)
-    mlflow.log_artifact("cv_results.csv")
+    for i in range(len(results['params'])):
+        param_set = results['params'][i]
+        mean_score = results['mean_test_score'][i]
+        std_score = results['std_test_score'][i]
 
-    # Log best parameters & CV score
+        # Log each combination as a separate MLflow run
+        with mlflow.start_run(nested=True):
+            mlflow.log_params(param_set)
+            mlflow.log_metric("mean_test_score", mean_score)
+            mlflow.log_metric("std_test_score", std_score)
+
+    # Log best parameters separately in main run
     mlflow.log_params(grid_search.best_params_)
-    mlflow.log_metric("best_cv_score", grid_search.best_score_)
 
     # Store and evaluate the best model
     best_model = grid_search.best_estimator_
+    
     classification_threshold = 0.45
 
     # Train Predictions
